@@ -1,0 +1,185 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">Dashboard</h1>
+
+    {% if not user.is_authenticated %}
+    <div class="p-5 mb-4 bg-light rounded-3 text-center shadow-sm">
+        <div class="container-fluid py-3">
+            <h2 class="display-6 fw-bold">Reuniting Belongings, One Item at a Time</h2>
+            <p class="fs-5 text-muted">
+                Lost something? Found something? Report items, browse listings, and let our smart matching technology help reconnect items with their owners.
+            </p>
+            <p class="mt-4">
+                <a class="btn btn-dark btn-lg" href="{% url 'login' %}">Report an Item</a>
+            </p>
+            <small class="text-muted">You must be logged in to report an item.</small>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4"><a href="{% url 'dashboard' %}" class="text-decoration-none"><div class="card text-center h-100 shadow-sm"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Total Items</h6><p class="card-text fs-1 fw-bold text-dark">{{ total_active_items }}</p><small class="text-muted">Active reported items</small></div></div></a></div>
+        <div class="col-lg-3 col-md-6 mb-4"><a href="?status=Lost" class="text-decoration-none"><div class="card text-danger text-center h-100 shadow-sm"><div class="card-body"><h6 class="card-subtitle mb-2">Lost Items</h6><p class="card-text fs-1 fw-bold">{{ lost_items_count }}</p><small class="text-muted">Waiting to be found</small></div></div></a></div>
+        <div class="col-lg-3 col-md-6 mb-4"><a href="?status=Found" class="text-decoration-none"><div class="card text-success text-center h-100 shadow-sm"><div class="card-body"><h6 class="card-subtitle mb-2">Found Items</h6><p class="card-text fs-1 fw-bold">{{ found_items_count }}</p><small class="text-muted">Waiting for owners</small></div></div></a></div>
+        <div class="col-lg-3 col-md-6 mb-4"><div class="card text-info text-center h-100 shadow-sm"><div class="card-body"><h6 class="card-subtitle mb-2">Success Rate</h6><p class="card-text fs-1 fw-bold">{{ success_rate }}%</p><small class="text-muted">Items reunited</small></div></div></div>
+    </div>
+
+    <div class="card card-body mb-4">
+        <form method="GET" action="{% url 'dashboard' %}" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-4"><label for="q" class="form-label">Search Keyword</label><input type="text" name="q" id="q" class="form-control" placeholder="Phone, wallet, key..." value="{{ request.GET.q }}"></div>
+            <div class="col-md-3"><label for="status" class="form-label">Status</label><select name="status" id="status" class="form-select"><option value="">All</option><option value="Lost" {% if request.GET.status == 'Lost' %}selected{% endif %}>Lost</option><option value="Found" {% if request.GET.status == 'Found' %}selected{% endif %}>Found</option></select></div>
+            <div class="col-md-3"><label for="item_type" class="form-label">Item Type</label><select name="item_type" id="item_type" class="form-select"><option value="">All</option>{% for value, display in item_type_choices %}<option value="{{ value }}" {% if request.GET.item_type == value %}selected{% endif %}>{{ display }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Filter</button></div>
+        </form>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for item in items %}
+        <div class="col">
+            <div class="card h-100 item-card" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#itemDetailModal" data-item-id="{{ item.id }}" data-title="{{ item.title }}" data-status="{{ item.status }}" data-item-type="{{ item.item_type }}" data-description="{{ item.description }}" data-location="{{ item.location_name }}" data-latitude="{{ item.latitude }}" data-longitude="{{ item.longitude }}" data-date="{{ item.lost_date|date:'F d, Y' }}" data-user="{{ item.user.username }}" data-owner-id="{{ item.user.id }}" data-owner-verified="{{ item.user.profile.is_verified }}" data-photo-url="{% if item.photo %}{{ item.photo.url }}{% endif %}" data-edit-url="{% url 'edit_item' item.id %}" data-delete-url="{% url 'delete_item' item.id %}" data-secret-question="{{ item.secret_question|default:'' }}" data-start-chat-url="{% url 'start_conversation' item.id %}">
+                {% if item.photo %}<img src="{{ item.photo.url }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">{% endif %}
+                <div class="card-body"><h5 class="card-title">{{ item.title }}</h5><span class="badge bg-{% if item.status == 'Lost' %}danger{% else %}success{% endif %}">{{ item.status }}</span><span class="badge bg-secondary">{{ item.item_type }}</span><p class="card-text mt-2">{{ item.description|truncatewords:20 }}</p></div>
+                <div class="card-footer text-muted">Reported on {{ item.created_at|date:"M d, Y" }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><div class="text-center p-5 bg-light rounded"><i class="bi bi-search fs-1"></i><h4 class="mt-3">No Items Found</h4><p class="text-muted">Try adjusting your filters or be the first to report an item!</p></div></div>
+        {% endfor %}
+    </div>
+
+<!--    {% if user.is_authenticated %}{% include "baseapp/add_item_modal.html" %}{% endif %}-->
+
+    <div class="modal fade" id="itemDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="modal-item-title"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6"><img id="modal-item-photo" src="" class="img-fluid rounded mb-3"></div>
+                        <div class="col-md-6">
+                            <h5 id="modal-item-title-body"></h5><p><span id="modal-item-status-badge" class="badge"></span></p><h5>Description</h5><p id="modal-item-description"></p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Category:</strong> <span id="modal-item-type"></span></li>
+                                <li class="list-group-item"><strong>Location:</strong> <span id="modal-item-location"></span> <a id="modal-location-link" href="#" target="_blank" class="ms-2 small">(View on Map)</a></li>
+                                <li class="list-group-item"><strong>Date:</strong> <span id="modal-item-date"></span></li>
+                                <li class="list-group-item"><strong>Reported by:</strong> <span id="modal-item-user"></span> <span id="modal-user-verified-badge" class="badge bg-primary ms-1" style="display: none;">✔️ Verified</span></li>
+                            </ul>
+                            <div id="modal-secret-question-container" class="mt-3" style="display: none;">
+                                <div class="alert alert-warning"><h6 class="alert-heading">Ownership Verification</h6><p id="modal-secret-question-text" class="mb-2"></p><div class="input-group"><input type="text" id="secret-answer-input" class="form-control" placeholder="Enter claimant's answer"><button class="btn btn-warning" type="button" id="verify-answer-btn">Verify</button></div><div id="verify-status-message" class="mt-2 small"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                <div class="modal-footer justify-content-between"><div id="modal-action-buttons"></div><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemDetailModal = document.getElementById('itemDetailModal');
+        const currentUserId = {{ user.id|default:'null' }};
+        let currentItemId = null;
+
+        if (itemDetailModal) {
+            itemDetailModal.addEventListener('show.bs.modal', function (event) {
+                const card = event.relatedTarget;
+                const data = card.dataset;
+                currentItemId = data.itemId;
+
+                // Populate all modal content
+                itemDetailModal.querySelector('#modal-item-title').textContent = data.title;
+                itemDetailModal.querySelector('#modal-item-title-body').textContent = data.title;
+                itemDetailModal.querySelector('#modal-item-description').textContent = data.description;
+                itemDetailModal.querySelector('#modal-item-type').textContent = data.itemType;
+                itemDetailModal.querySelector('#modal-item-location').textContent = data.location;
+                itemDetailModal.querySelector('#modal-item-date').textContent = data.date;
+                itemDetailModal.querySelector('#modal-item-user').textContent = data.user;
+
+                const modalPhoto = itemDetailModal.querySelector('#modal-item-photo');
+                if (data.photoUrl) {
+                    modalPhoto.src = data.photoUrl;
+                    modalPhoto.style.display = 'block';
+                } else {
+                    modalPhoto.style.display = 'none';
+                }
+
+                const modalStatusBadge = itemDetailModal.querySelector('#modal-item-status-badge');
+                modalStatusBadge.textContent = data.status;
+                modalStatusBadge.className = (data.status === 'Lost') ? 'badge bg-danger' : 'badge bg-success';
+
+                const locationLink = itemDetailModal.querySelector('#modal-location-link');
+                if (data.latitude && data.longitude) {
+                locationLink.href = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+                locationLink.style.display = 'inline';
+                } else {
+                    locationLink.style.display = 'none';
+                }
+
+                const secretQuestionContainer = itemDetailModal.querySelector('#modal-secret-question-container');
+                const secretQuestionText = itemDetailModal.querySelector('#modal-secret-question-text');
+                itemDetailModal.querySelector('#verify-status-message').innerHTML = '';
+                itemDetailModal.querySelector('#secret-answer-input').value = '';
+                if (data.secretQuestion) {
+                    secretQuestionText.textContent = data.secretQuestion;
+                    secretQuestionContainer.style.display = 'block';
+                } else {
+                    secretQuestionContainer.style.display = 'none';
+                }
+
+                const verifiedBadge = itemDetailModal.querySelector('#modal-user-verified-badge');
+                if (data.ownerVerified === 'True') {
+                    verifiedBadge.style.display = 'inline';
+                } else {
+                    verifiedBadge.style.display = 'none';
+                }
+
+                // Action buttons logic
+                const actionButtonsContainer = itemDetailModal.querySelector('#modal-action-buttons');
+                actionButtonsContainer.innerHTML = '';
+                if (currentUserId && currentUserId == data.ownerId) {
+                    const editButton = `<a href="${data.editUrl}" class="btn btn-warning">Edit</a>`;
+                    const deleteButton = `<a href="${data.deleteUrl}" class="btn btn-danger">Delete</a>`;
+                    actionButtonsContainer.innerHTML = editButton + ' ' + deleteButton;
+                } else if (currentUserId) {
+                    // This now creates a direct link to the chat page
+                    const contactButton = `<a href="${data.startChatUrl}" class="btn btn-primary">Contact Reporter</a>`;
+                    actionButtonsContainer.innerHTML = contactButton;
+                }
+            });
+
+            // Secret Question verification logic
+            document.getElementById('verify-answer-btn').addEventListener('click', function() {
+                const answerInput = document.getElementById('secret-answer-input');
+                const submittedAnswer = answerInput.value;
+                const verifyStatusDiv = document.getElementById('verify-status-message');
+                if (!submittedAnswer) {
+                    verifyStatusDiv.innerHTML = `<span class="text-danger">Please enter an answer.</span>`; return;
+                }
+                const verifyUrl = "{% url 'verify_answer' %}";
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                let formData = new FormData();
+                formData.append('item_id', currentItemId);
+                formData.append('answer', submittedAnswer);
+
+                fetch(verifyUrl, {method: 'POST', body: formData, headers: {'X-CSRFToken': csrftoken}})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.correct) {
+                        verifyStatusDiv.innerHTML = `<strong class="text-success">Correct Answer!</strong>`;
+                    } else {
+                        verifyStatusDiv.innerHTML = `<strong class="text-danger">Incorrect Answer.</strong>`;
+                    }
+                });
+            });
+            // NOTE: The old contact form and its submit listener have been removed
+        }
+    });
+    </script>
+{% endblock %}

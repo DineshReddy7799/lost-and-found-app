@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ownership Verified for Your Item!</title>
+</head>
+<body>
+    <p>Hi {{ owner_user.username }},</p>
+
+    <p>Great news! Someone has successfully answered the secret question for your lost item: <strong>"{{ item.title }}"</strong>.</p>
+
+    <p>The user, <strong>{{ verifier_user.username }}</strong>, is likely the person who found your item. Please log in to your account to contact them and arrange the return.</p>
+
+    <p>Thank you for using our service!</p>
+</body>
+</html>

@@ -1,0 +1,174 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Items Map Overview 🗺️</h1>
+
+<div class="card card-body shadow-sm">
+    <div id="search-container" class="mb-3" style="display: none;">
+        {% csrf_token %}
+        <button id="search-route-btn" class="btn btn-primary"><i class="bi bi-search"></i> Search Along This Route</button>
+        <button id="reset-map-btn" class="btn btn-secondary">Reset Map</button>
+    </div>
+    <div id="fullMap" style="height: 60vh; border-radius: 0.5rem;"></div>
+</div>
+
+<div id="results-container" class="mt-4"></div>
+
+<div class="modal fade" id="itemDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title" id="modal-item-title"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6"><img id="modal-item-photo" src="" class="img-fluid rounded mb-3"></div>
+                    <div class="col-md-6">
+                        <h5 id="modal-item-title-body"></h5><p><span id="modal-item-status-badge" class="badge"></span></p><h5>Description</h5><p id="modal-item-description"></p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Category:</strong> <span id="modal-item-type"></span></li>
+                            <li class="list-group-item"><strong>Location:</strong> <span id="modal-item-location"></span> <a id="modal-location-link" href="#" target="_blank" class="ms-2 small">(View on Map)</a></li>
+                            <li class="list-group-item"><strong>Date:</strong> <span id="modal-item-date"></span></li>
+                            <li class="list-group-item"><strong>Reported by:</strong> <span id="modal-item-user"></span> <span id="modal-user-verified-badge" class="badge bg-primary ms-1" style="display: none;">✔️ Verified</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between"><div id="modal-action-buttons"></div><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const map = L.map('fullMap').setView([14.1285, 77.3653], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        setTimeout(() => { map.invalidateSize(); }, 100);
+
+        const itemsData = {{ items_data|safe }};
+        let markers = L.markerClusterGroup();
+        let drawnItems = new L.FeatureGroup().addTo(map);
+        let drawnRouteCoords = null;
+
+        function populateInitialMarkers() {
+            markers.clearLayers();
+            itemsData.forEach(item => {
+                const marker = L.marker([item.lat, item.lon]);
+                marker.bindPopup(`<b>${item.title}</b>`);
+                markers.addLayer(marker);
+            });
+            map.addLayer(markers);
+        }
+        populateInitialMarkers();
+
+        const drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: {
+                polygon: false, rectangle: false, circle: false, marker: false, circlemarker: false,
+                polyline: { shapeOptions: { color: '#0d6efd' } }
+            }
+        });
+        map.addControl(drawControl);
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            drawnItems.clearLayers();
+            const layer = event.layer;
+            drawnItems.addLayer(layer);
+            drawnRouteCoords = layer.getLatLngs().map(latlng => [latlng.lng, latlng.lat]);
+            document.getElementById('search-container').style.display = 'block';
+        });
+
+        document.getElementById('search-route-btn').addEventListener('click', function() {
+            if (!drawnRouteCoords) return;
+            const searchUrl = "{% url 'search_route' %}";
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(searchUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ route: drawnRouteCoords })
+            })
+            .then(response => response.json())
+            .then(data => {
+                markers.clearLayers();
+                const resultsContainer = document.getElementById('results-container');
+                resultsContainer.innerHTML = '';
+                if (data.items && data.items.length > 0) {
+                    let resultsHtml = `<h3 class="mb-3">Found ${data.items.length} item(s)</h3><div class="list-group">`;
+                    data.items.forEach(item => {
+                        resultsHtml += `<div class="list-group-item list-group-item-action" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#itemDetailModal" data-item-id="${item.id}" data-title="${item.title}" data-status="${item.status}" data-item-type="${item.item_type}" data-description="${item.description}" data-location="${item.location_name}" data-latitude="${item.latitude}" data-longitude="${item.longitude}" data-date="${item.date}" data-user="${item.user}" data-owner-id="${item.owner_id}" data-owner-verified="${item.owner_verified}" data-photo-url="${item.photo_url}" data-edit-url="${item.edit_url}" data-delete-url="${item.delete_url}" data-start-chat-url="${item.start_chat_url}" data-secret-question="${item.secret_question}">${item.title}</div>`;
+                        const marker = L.marker([item.latitude, item.longitude]);
+                        marker.bindTooltip(item.title, { permanent: true, direction: 'top', className: 'item-map-label' }).openTooltip();
+                        markers.addLayer(marker);
+                    });
+                    resultsHtml += '</div>';
+                    resultsContainer.innerHTML = resultsHtml;
+                } else {
+                    resultsContainer.innerHTML = '<div class="alert alert-info">No items were found along this route.</div>';
+                }
+            });
+        });
+
+        document.getElementById('reset-map-btn').addEventListener('click', () => location.reload());
+
+        const itemDetailModal = document.getElementById('itemDetailModal');
+        const currentUserId = {{ user.id|default:'null' }};
+
+        if (itemDetailModal) {
+            // RESTORED: Full JavaScript for populating the detail modal
+            itemDetailModal.addEventListener('show.bs.modal', function (event) {
+                const clickedItem = event.relatedTarget;
+                const data = clickedItem.dataset;
+
+                itemDetailModal.querySelector('#modal-item-title').textContent = data.title;
+                itemDetailModal.querySelector('#modal-item-title-body').textContent = data.title;
+                itemDetailModal.querySelector('#modal-item-description').textContent = data.description;
+                itemDetailModal.querySelector('#modal-item-type').textContent = data.itemType;
+                itemDetailModal.querySelector('#modal-item-location').textContent = data.location;
+                itemDetailModal.querySelector('#modal-item-date').textContent = data.date;
+                itemDetailModal.querySelector('#modal-item-user').textContent = data.user;
+
+                const modalPhoto = itemDetailModal.querySelector('#modal-item-photo');
+                if (data.photoUrl) {
+                    modalPhoto.src = data.photoUrl;
+                    modalPhoto.style.display = 'block';
+                } else {
+                    modalPhoto.style.display = 'none';
+                }
+
+                const modalStatusBadge = itemDetailModal.querySelector('#modal-item-status-badge');
+                modalStatusBadge.textContent = data.status;
+                modalStatusBadge.className = (data.status === 'Lost') ? 'badge bg-danger' : 'badge bg-success';
+
+                const locationLink = itemDetailModal.querySelector('#modal-location-link');
+                if (data.latitude && data.longitude) {
+                    locationLink.href = `https://www.google.com/maps?q=latitude,longitude4{data.latitude},${data.longitude}`;
+                    locationLink.style.display = 'inline';
+                } else {
+                    locationLink.style.display = 'none';
+                }
+
+                const verifiedBadge = itemDetailModal.querySelector('#modal-user-verified-badge');
+                if (data.ownerVerified === 'True') {
+                    verifiedBadge.style.display = 'inline';
+                } else {
+                    verifiedBadge.style.display = 'none';
+                }
+
+                const actionButtonsContainer = itemDetailModal.querySelector('#modal-action-buttons');
+                actionButtonsContainer.innerHTML = '';
+                if (currentUserId && currentUserId == data.ownerId) {
+                    const editButton = `<a href="${data.editUrl}" class="btn btn-warning">Edit</a>`;
+                    const deleteButton = `<a href="${data.deleteUrl}" class="btn btn-danger">Delete</a>`;
+                    actionButtonsContainer.innerHTML = editButton + ' ' + deleteButton;
+                } else if (currentUserId) {
+                    const contactButton = `<a href="${data.startChatUrl}" class="btn btn-primary">Contact Reporter</a>`;
+                    actionButtonsContainer.innerHTML = contactButton;
+                }
+            });
+        }
+    });
+    </script>
+{% endblock %}

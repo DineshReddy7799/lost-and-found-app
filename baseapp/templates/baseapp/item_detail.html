@@ -1,0 +1,55 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-3">{{ item.title }} <span class="badge bg-{% if item.status == 'Lost' %}danger{% else %}success{% endif %}">{{ item.status }}</span></h1>
+            <p class="lead">{{ item.description }}</p>
+            <hr>
+            <h5>Details</h5>
+            <ul class="list-unstyled">
+                <li><strong>Item Type:</strong> {{ item.item_type }}</li>
+                <li><strong>Date Lost/Found:</strong> {{ item.lost_date|date:"F d, Y" }}</li>
+                <li><strong>Contact:</strong> {{ item.contact_info }}</li>
+            </ul>
+        </div>
+        <div class="col-md-4">
+            {% if item.photo %}
+                <img src="{{ item.photo.url }}" class="img-fluid rounded shadow-sm" alt="{{ item.title }}">
+            {% else %}
+                <div class="text-center p-5 bg-light rounded">No Image Provided</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% if user == item.user %}
+<div class="my-4">
+    <a href="{% url 'edit_item' item.id %}" class="btn btn-warning">Edit Item</a>
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+        Delete Item
+    </button>
+</div>
+{% endif %}
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete "{{ item.title }}"?</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{% url 'delete_item' item.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

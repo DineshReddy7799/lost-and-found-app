@@ -1,0 +1,21 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+<div class="col-md-8 offset-md-2">
+    <h2 class="mb-4">My Notifications</h2>
+    <div class="list-group">
+        {% for notification in notifications %}
+            <a href="{% if notification.conversation %}{% url 'conversation_detail' notification.conversation.id %}{% else %}#{% endif %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <small class="text-nowrap text-muted">{{ notification.created_at|timesince }} ago</small>
+                </div>
+            </a>
+        {% empty %}
+            <div class="list-group-item">
+                <p class="mb-1 text-muted text-center">You have no notifications.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

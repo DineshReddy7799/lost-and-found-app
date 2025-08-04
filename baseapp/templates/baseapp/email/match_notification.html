@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Potential Match Found!</title>
+</head>
+<body>
+    <p>Hi {{ recipient_user.username }},</p>
+
+    <p>A new item has been reported that might be a match for your <strong>{{ your_item.status }} {{ your_item.item_type }}</strong>, titled "{{ your_item.title }}".</p>
+
+    <hr>
+    <h4>Details of the Newly Reported Item:</h4>
+    <ul>
+        <li><strong>Status:</strong> {{ newly_reported_item.status }}</li>
+        <li><strong>Type:</strong> {{ newly_reported_item.item_type }}</li>
+        <li><strong>Title:</strong> {{ newly_reported_item.title }}</li>
+        <li><strong>Description:</strong> {{ newly_reported_item.description }}</li>
+        <li><strong>Date Reported Lost/Found:</strong> {{ newly_reported_item.lost_date }}</li>
+    </ul>
+    <hr>
+
+    <p>Please log in to our website to view more details on your dashboard.</p>
+    <p>Thank you for using our Lost & Found service!</p>
+</body>
+</html>

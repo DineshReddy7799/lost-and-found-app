@@ -1,0 +1,183 @@
+{% load widget_tweaks %}
+
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemModalLabel">Report an Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div id="form-view">
+                <form action="{% url 'add_item' %}" method="post" enctype="multipart/form-data" id="item-form">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_title">Title</label>
+                                {{ item_form.title|add_class:"form-control"|attr:"placeholder:e.g., Black iPhone 14" }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_status">Status</label>
+                                {{ item_form.status|add_class:"form-select" }}
+                            </div>
+                        </div>
+
+                        <div id="secret-fields-container" style="display: none;">
+                            <hr>
+                            <h5 class="mt-2">Ownership Verification (Optional)</h5>
+                            <p class="text-muted small">For added security when reporting a LOST item, add a secret question that only you would know the answer to.</p>
+                            <div class="mb-3">
+                                <label for="id_secret_question">Secret Question</label>
+                                {{ item_form.secret_question|add_class:"form-control"|attr:"placeholder:e.g., What is the sticker on the back?" }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_secret_answer">Secret Answer (kept private)</label>
+                                {{ item_form.secret_answer|add_class:"form-control"|attr:"placeholder:e.g., A blue butterfly" }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                             <label for="id_description">Description</label>
+                             {{ item_form.description|add_class:"form-control"|attr:"rows:3" }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_item_type">Item Type</label>
+                                {{ item_form.item_type|add_class:"form-select" }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_lost_date">Date Lost/Found</label>
+                                {{ item_form.lost_date|add_class:"form-control" }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_contact_info">Contact Info</label>
+                            {{ item_form.contact_info|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_photo">Photo (Optional)</label>
+                            {{ item_form.photo|add_class:"form-control" }}
+                        </div>
+                        <hr>
+                        <h5>Location Details</h5>
+                        <div class="mb-3">
+                            <label for="id_location_name" class="form-label">Location Name</label>
+                            <div class="input-group">
+                                {{ item_form.location_name|add_class:"form-control" }}
+                                {{ item_form.latitude }}
+                                {{ item_form.longitude }}
+                                <button class="btn btn-info text-white" type="button" id="geocodeBtn">Search</button>
+                                <button class="btn btn-outline-secondary" type="button" id="switchToMapViewBtn">Pick on Map</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="map-view" style="display: none;">
+                <div class="modal-body">
+                    <p class="text-muted">Click on the map to place a pin for the item's location.</p>
+                    <div id="modalMap" style="height: 400px; width: 100%;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="switchToFormViewBtn">Back to Form</button>
+                    <button type="button" class="btn btn-primary" id="saveLocationBtn">Save Location</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mainModalElement = document.getElementById('addItemModal');
+    if (!mainModalElement) return;
+
+    const modalTitle = document.getElementById('addItemModalLabel');
+    const formView = document.getElementById('form-view');
+    const mapView = document.getElementById('map-view');
+    const switchToMapViewBtn = document.getElementById('switchToMapViewBtn');
+    const switchToFormViewBtn = document.getElementById('switchToFormViewBtn');
+    const saveLocationBtn = document.getElementById('saveLocationBtn');
+    const geocodeBtn = document.getElementById('geocodeBtn');
+    let modalMap;
+    let marker;
+
+    function showMapView() {
+        formView.style.display = 'none';
+        mapView.style.display = 'block';
+        modalTitle.textContent = 'Select Location';
+
+        if (!modalMap) {
+            modalMap = L.map('modalMap').setView([14.1285, 77.3653], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(modalMap);
+        }
+        setTimeout(() => modalMap.invalidateSize(), 10);
+    }
+
+    function showFormView() {
+        mapView.style.display = 'none';
+        formView.style.display = 'block';
+        modalTitle.textContent = 'Report an Item';
+    }
+
+    switchToMapViewBtn.addEventListener('click', function() {
+        showMapView();
+        modalMap.on('click', function (e) {
+            if (marker) { marker.setLatLng(e.latlng); }
+            else { marker = L.marker(e.latlng, { draggable: true }).addTo(modalMap); }
+        });
+    });
+    switchToFormViewBtn.addEventListener('click', showFormView);
+    saveLocationBtn.addEventListener('click', function() {
+        if (!marker) { alert('Please select a location on the map first.'); return; }
+        const latlng = marker.getLatLng();
+        document.getElementById('id_latitude').value = latlng.lat.toFixed(6);
+        document.getElementById('id_longitude').value = latlng.lng.toFixed(6);
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+            .then(response => response.json())
+            .then(data => { document.getElementById('id_location_name').value = data.display_name || 'Unknown Location'; })
+            .catch(err => console.error("Reverse geocoding error:", err));
+        showFormView();
+    });
+    geocodeBtn.addEventListener('click', function() {
+        const locationNameInput = document.getElementById('id_location_name');
+        const locationQuery = locationNameInput.value;
+        if (!locationQuery) { alert('Please enter a location to search for.'); return; }
+        const apiUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationQuery)}`;
+        geocodeBtn.textContent = 'Searching...';
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const bestResult = data[0];
+                    document.getElementById('id_latitude').value = parseFloat(bestResult.lat).toFixed(6);
+                    document.getElementById('id_longitude').value = parseFloat(bestResult.lon).toFixed(6);
+                    locationNameInput.value = bestResult.display_name;
+                    alert('Location found and coordinates have been set!');
+                } else {
+                    alert('Location could not be found.');
+                }
+            })
+            .catch(err => console.error("Geocoding API error:", err))
+            .finally(() => { geocodeBtn.textContent = 'Search'; });
+    });
+
+    const statusSelect = document.querySelector("#addItemModal #id_status");
+    const secretFieldsContainer = document.getElementById("secret-fields-container");
+    function toggleSecretFields() {
+        if (statusSelect.value === 'Lost') { secretFieldsContainer.style.display = 'block'; }
+        else { secretFieldsContainer.style.display = 'none'; }
+    }
+    if (statusSelect) {
+        toggleSecretFields();
+        statusSelect.addEventListener('change', toggleSecretFields);
+    }
+});
+</script>

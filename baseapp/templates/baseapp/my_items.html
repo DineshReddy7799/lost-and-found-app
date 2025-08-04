@@ -1,0 +1,78 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">My Reported Items</h1>
+
+    <div class="card card-body mb-4">
+        <form method="GET" action="{% url 'my_items' %}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="q" class="form-label">Search My Items</label>
+                <input type="text" name="q" id="q" class="form-control" placeholder="Phone, wallet, key..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="Lost" {% if request.GET.status == 'Lost' %}selected{% endif %}>Lost</option>
+                    <option value="Found" {% if request.GET.status == 'Found' %}selected{% endif %}>Found</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="item_type" class="form-label">Item Type</label>
+                <select name="item_type" id="item_type" class="form-select">
+                    <option value="">All</option>
+                    {% for value, display in item_type_choices %}
+                    <option value="{{ value }}" {% if request.GET.item_type == value %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for item in items %}
+        <div class="col">
+            <div class="card h-100">
+                {% if item.photo %}
+                    <img src="{{ item.photo.url }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.title }}</h5>
+                    <p class="card-text">{{ item.description|truncatewords:20 }}</p>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <span class="badge bg-{% if item.status == 'Lost' %}danger{% else %}success{% endif %}">{{ item.status }}</span>
+                        <span class="badge bg-secondary">{{ item.item_type }}</span>
+                    </li>
+                    <li class="list-group-item"><strong>Location:</strong> {{ item.location_name }}</li>
+                    <li class="list-group-item"><strong>Date:</strong> {{ item.lost_date }}</li>
+                </ul>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Reported on {{ item.created_at|date:"M d, Y" }}</small>
+
+                    {% if not item.is_resolved %}
+                        <form action="{% url 'resolve_item' item.id %}" method="POST" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">Mark as Resolved</button>
+                        </form>
+                    {% else %}
+                        <span class="badge bg-info text-dark">Resolved</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">You have not reported any items yet.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+<!--    {% if user.is_authenticated %}-->
+<!--        {% include "baseapp/add_item_modal.html" %}-->
+<!--    {% endif %}-->
+{% endblock %}

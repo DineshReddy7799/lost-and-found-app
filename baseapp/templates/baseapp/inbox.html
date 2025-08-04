@@ -1,0 +1,26 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+<div class="col-md-8 offset-md-2">
+    <h2 class="mb-4">My Inbox</h2>
+    <div class="card shadow-sm">
+        <div class="list-group list-group-flush">
+            {% for conversation in conversations %}
+                <a href="{% url 'conversation_detail' conversation.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">Chat about: {{ conversation.item.title }}</h5>
+                        <small>{{ conversation.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    <p class="mb-1">
+                        {% for user in conversation.participants.all %}{% if user != request.user %}
+                            With: {{ user.username }}
+                        {% endif %}{% endfor %}
+                    </p>
+                </a>
+            {% empty %}
+                <div class="list-group-item text-center p-5"><p class="mb-0 text-muted">You have no conversations.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

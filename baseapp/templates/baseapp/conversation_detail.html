@@ -1,0 +1,63 @@
+{% extends "baseapp/base.html" %}
+
+{% block content %}
+<style>
+    .chat-container { max-height: 50vh; overflow-y: auto; }
+    .chat-bubble { max-width: 75%; padding: 10px 15px; border-radius: 1.25rem; }
+    .chat-bubble-sender { background-color: #0d6efd; color: white; }
+    .chat-bubble-receiver { background-color: #e9ecef; color: #212529; }
+</style>
+
+<div class="col-md-8 offset-md-2">
+    <h4 class="mb-3">Chat about: {{ conversation.item.title }}</h4>
+    <div class="card shadow-sm">
+        <div class="card-body chat-container d-flex flex-column p-4" id="chat-log">
+            {% for message in conversation.messages.all %}
+                <div class="d-flex mb-3 {% if message.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div>
+                        <div class="chat-bubble {% if message.sender == request.user %}chat-bubble-sender{% else %}chat-bubble-receiver{% endif %}">
+                            {{ message.body }}
+                        </div>
+                        <small class="d-block text-muted text-end mt-1">
+                            {{ message.sender.username }} - {{ message.timestamp|timesince }} ago
+                        </small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <form method="POST" id="chat-form">
+                {% csrf_token %}
+                <div class="input-group">
+                    <textarea name="body" class="form-control" rows="1" placeholder="Type your message..." required></textarea>
+                    <button class="btn btn-primary" type="submit" id="send-button">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chat-log');
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        const chatForm = document.getElementById('chat-form');
+        const sendButton = document.getElementById('send-button');
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', function() {
+                setTimeout(function() {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...`;
+                }, 0);
+            });
+        }
+    });
+</script>
+{% endblock %}
