@@ -3,6 +3,8 @@ services:
     name: lost-and-found
     env: python
     buildCommand: |
+      # ADD THIS LINE to install the GDAL system library
+      apt-get update && apt-get install -y libgdal-dev
       pip install -r requirements.txt
       python manage.py collectstatic --no-input
       python manage.py migrate
