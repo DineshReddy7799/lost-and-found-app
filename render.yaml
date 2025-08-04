@@ -11,7 +11,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: lost-and-found-db
+          name: lost-and-found-db # This must match the database name below
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
@@ -19,7 +19,6 @@ services:
         value: 4
 
 databases:
-  - name: lost-and-found-db
+  - name: lost-and-found-db # This is an internal name for your database on Render
     plan: free
-    # CORRECTED: Use this line to enable PostGIS
-    postgisEnabled: true
+    postgisEnabled: true # This correctly enables the PostGIS extension
