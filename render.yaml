@@ -3,7 +3,6 @@ services:
     name: lost-and-found
     env: python
     buildCommand: |
-      # ADD THIS LINE to install the GDAL system library
       apt-get update && apt-get install -y libgdal-dev
       pip install -r requirements.txt
       python manage.py collectstatic --no-input
@@ -21,8 +20,6 @@ services:
 
 databases:
   - name: lost-and-found-db
-    databaseName: lostandfound
-    user: lostandfound_user
     plan: free
-    extensions:
-      - enabled: postgis
+    # CORRECTED: Use this line to enable PostGIS
+    postgisEnabled: true
