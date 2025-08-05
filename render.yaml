@@ -3,22 +3,24 @@ services:
     name: lost-and-found
     env: python
     buildCommand: |
-      apt-get update && apt-get install -y binutils libproj-dev gdal-bin
+      # Install system libraries AND the python adapter for GDAL
+      apt-get update && apt-get install -y libgdal-dev python3-gdal
+      # Install the rest of the packages with pip
       pip install -r requirements.txt
       python manage.py collectstatic --no-input
       python manage.py migrate
-    startCommand: gunicorn lostandfound.wsgi:application
+    startCommand: "gunicorn lostandfound.wsgi"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: lostandfound-db
+          name: lost-and-found-db
           property: connectionString
-      - key: DJANGO_SECRET_KEY
+      - key: SECRET_KEY
         generateValue: true
-      - key: DEBUG
-        value: "False"
+      - key: WEB_CONCURRENCY
+        value: 4
 
 databases:
-  - name: lostandfound-db
-    databaseName: lostandfound
-    user: lostandfound_user
+  - name: lost-and-found-db
+    plan: free
+    postgisEnabled: true
