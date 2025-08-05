@@ -1,15 +1,23 @@
-{
-    "builds": [
-        {
-            "src": "lostandfound/wsgi.py",
-            "use": "@vercel/python",
-            "config": { "maxLambdaSize": "15mb" }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "lostandfound/wsgi.py"
-        }
-    ]
-}
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environments
+env/
+venv/
+.venv/
+lostfoundenv/
+
+# Local Database
+db.sqlite3
+
+# Django staticfiles directory
+staticfiles/
