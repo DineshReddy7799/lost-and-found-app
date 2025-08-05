@@ -27,7 +27,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 SECRET_KEY = 'django-insecure-6=)@-)c&1h=p5r#%01xim_q@k^r7n__fvkgqaf9_v)v%!g#l3i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'baseapp',
     'widget_tweaks',
+    'cloudinary_storage',
+    'django.contrib.staticfiles',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -88,16 +91,16 @@ WSGI_APPLICATION = 'lostandfound.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-#         'NAME': 'postgres',
-#         'USER': 'postgres',
-#         'PASSWORD': 'lostandfound@',
-#         'HOST': 'db.znkapuglbvrynexeplpp.supabase.co',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'lostandfound@',
+        'HOST': 'db.znkapuglbvrynexeplpp.supabase.co',
+        'PORT': '5432',
+    }
+}
 
 
 # Add this line at the end of the file.
@@ -168,9 +171,17 @@ LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         conn_max_age=600,
+#         conn_health_checks=True,
+#     )
+# }
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dcb5jcxmj',
+    'API_KEY': '348449689432658',
+    'API_SECRET': 'fmR47UMmLjVpLBA2fMWwhznEphA',
 }
+MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

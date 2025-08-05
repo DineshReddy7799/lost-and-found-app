@@ -1,9 +1,14 @@
 asgiref==3.9.1
+certifi==2025.8.3
+charset-normalizer==3.4.2
+cloudinary==1.44.1
 dj-database-url==3.0.1
 Django==5.2.4
+django-cloudinary-storage==0.3.0
 django-widget-tweaks==1.5.0
 GDAL @ file:///C:/b/abs_60gjdf6wzx/croot/gdal-split_1734448199581/work/build/swig/python
 gunicorn==23.0.0
+idna==3.10
 mkl-service==2.4.0
 mkl_fft @ file:///C:/Users/dev-admin/mkl/mkl_fft_1730823082242/work
 mkl_random @ file:///C:/Users/dev-admin/mkl/mkl_random_1730822522280/work
@@ -11,10 +16,14 @@ numpy @ file:///C:/b/abs_c1ywpu18ar/croot/numpy_and_numpy_base_1708638681471/wor
 packaging==25.0
 pillow==11.3.0
 psycopg2 @ file:///C:/b/abs_a4bewkfd4i/croot/psycopg2_1744919806261/work
+psycopg2-binary==2.9.10
 RapidFuzz==3.13.0
+requests==2.32.4
 setuptools==78.1.1
+six==1.17.0
 sqlparse==0.5.3
 thefuzz==0.22.1
 tzdata==2025.2
+urllib3==2.5.0
 wheel==0.45.1
 whitenoise==6.9.0
