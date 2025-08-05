@@ -11,14 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
+
 import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -27,13 +25,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 SECRET_KEY = 'django-insecure-6=)@-)c&1h=p5r#%01xim_q@k^r7n__fvkgqaf9_v)v%!g#l3i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-RAILWAY_STATIC_URL = os.environ.get('RAILWAY_STATIC_URL')
-if RAILWAY_STATIC_URL:
-    ALLOWED_HOSTS.append(f'.{RAILWAY_STATIC_URL}')
+
 
 # Application definition
 
@@ -46,9 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'baseapp',
     'widget_tweaks',
-    'cloudinary_storage',
-    'django.contrib.staticfiles',
-    'cloudinary',
+
 ]
 
 MIDDLEWARE = [
@@ -85,30 +79,26 @@ WSGI_APPLICATION = 'lostandfound.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+#
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-#         'NAME': 'postgres',
-#         'USER': 'postgres',
-#         'PASSWORD': 'lostandfound@',
-#         'HOST': 'db.znkapuglbvrynexeplpp.supabase.co',
-#         'PORT': '5432',
-#     }
-# }
-
 DATABASES = {
-    'default': dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        #'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'lostandfound@',
+        'HOST': 'db.znkapuglbvrynexeplpp.supabase.co',
+        'PORT': '5432',
+    }
 }
+
+
 
 # Add this line at the end of the file.
 # Replace 'gdal311.dll' if your filename is slightly different.

@@ -34,7 +34,7 @@ class Item(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
 
-    location_point = gis_models.PointField(srid=4326, blank=True, null=True)
+    #location_point = gis_models.PointField(srid=4326, blank=True, null=True)
     # Admin & Tracking
     created_at = models.DateTimeField(auto_now_add=True)
     is_resolved = models.BooleanField(default=False)
@@ -42,11 +42,11 @@ class Item(models.Model):
     secret_question = models.CharField(max_length=255, blank=True, null=True)
     secret_answer = models.CharField(max_length=255, blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        if self.latitude and self.longitude:
-            # Note the order is (longitude, latitude) for a PointField
-            self.location_point = Point(self.longitude, self.latitude)
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.latitude and self.longitude:
+    #         # Note the order is (longitude, latitude) for a PointField
+    #         self.location_point = Point(self.longitude, self.latitude)
+    #     super().save(*args, **kwargs)
 def __str__(self):
         return f"{self.get_status_display()} {self.title}"
 

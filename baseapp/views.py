@@ -727,50 +727,50 @@ def search_route_view(request):
             return JsonResponse({'error': 'An unexpected error occurred on the server.'}, status=500)
 
 
-@login_required
-def search_route_view(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            route_coords = data.get('route')
-
-            if not route_coords or len(route_coords) < 2:
-                return JsonResponse({'error': 'Invalid route provided.'}, status=400)
-
-            user_route = LineString(route_coords, srid=4326)
-            buffer_in_degrees = 100 / 111320.0
-
-            nearby_items = Item.objects.filter(
-                is_resolved=False,
-                location_point__isnull=False,
-                location_point__dwithin=(user_route, buffer_in_degrees)
-            )
-
-            # UPDATED: Manually build the list to include all necessary data
-            items_list = []
-            for item in nearby_items:
-                items_list.append({
-                    'id': item.id,
-                    'title': item.title,
-                    'status': item.status,
-                    'item_type': item.item_type,
-                    'description': item.description,
-                    'location_name': item.location_name,
-                    'latitude': item.latitude,
-                    'longitude': item.longitude,
-                    'date': item.lost_date.strftime('%B %d, %Y'),
-                    'user': item.user.username,
-                    'owner_id': item.user.id,
-                    'owner_verified': item.user.profile.is_verified,
-                    'photo_url': item.photo.url if item.photo else '',
-                    'edit_url': reverse('edit_item', args=[item.id]),
-                    'delete_url': reverse('delete_item', args=[item.id]),
-                    'start_chat_url': reverse('start_conversation', args=[item.id]),
-                    'secret_question': item.secret_question or ''
-                })
-
-            return JsonResponse({'items': items_list})
-
-        except Exception as e:
-            print(f"CRITICAL ERROR in search_route_view: {e}")
-            return JsonResponse({'error': 'An unexpected error occurred on the server.'}, status=500)
+# @login_required
+# def search_route_view(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             route_coords = data.get('route')
+#
+#             if not route_coords or len(route_coords) < 2:
+#                 return JsonResponse({'error': 'Invalid route provided.'}, status=400)
+#
+#             user_route = LineString(route_coords, srid=4326)
+#             buffer_in_degrees = 100 / 111320.0
+#
+#             nearby_items = Item.objects.filter(
+#                 is_resolved=False,
+#                 location_point__isnull=False,
+#                 location_point__dwithin=(user_route, buffer_in_degrees)
+#             )
+#
+#             # UPDATED: Manually build the list to include all necessary data
+#             items_list = []
+#             for item in nearby_items:
+#                 items_list.append({
+#                     'id': item.id,
+#                     'title': item.title,
+#                     'status': item.status,
+#                     'item_type': item.item_type,
+#                     'description': item.description,
+#                     'location_name': item.location_name,
+#                     'latitude': item.latitude,
+#                     'longitude': item.longitude,
+#                     'date': item.lost_date.strftime('%B %d, %Y'),
+#                     'user': item.user.username,
+#                     'owner_id': item.user.id,
+#                     'owner_verified': item.user.profile.is_verified,
+#                     'photo_url': item.photo.url if item.photo else '',
+#                     'edit_url': reverse('edit_item', args=[item.id]),
+#                     'delete_url': reverse('delete_item', args=[item.id]),
+#                     'start_chat_url': reverse('start_conversation', args=[item.id]),
+#                     'secret_question': item.secret_question or ''
+#                 })
+#
+#             return JsonResponse({'items': items_list})
+#
+#         except Exception as e:
+#             print(f"CRITICAL ERROR in search_route_view: {e}")
+#             return JsonResponse({'error': 'An unexpected error occurred on the server.'}, status=500)
