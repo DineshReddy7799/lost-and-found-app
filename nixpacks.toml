@@ -1,0 +1,5 @@
+[phases.setup]
+aptPkgs = ["libgdal-dev", "python3-gdal"]
+
+[start]
+cmd = "gunicorn lostandfound.wsgi"
